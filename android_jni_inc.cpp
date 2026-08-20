@@ -256,7 +256,7 @@ JAVA_FUNC(init)(JNIEnv *env, jobject thiz, jstring graphics_dir, jint options, j
 
     touchInterface.init(mobile_screen_width, mobile_screen_height, filesPath.c_str(), touchSettingsPath.c_str(), options, wheelNbr, game);
 
-#if 1
+#if !defined(DXX_ANDROID_NO_SIGNAL_HANDLER)
     // Catch all these and exit for now. If this works add logging
     signal(SIGSEGV, androidGenericSignal);
     signal(SIGFPE, androidGenericSignal);
@@ -397,18 +397,50 @@ JAVA_FUNC(backButton)(JNIEnv *env, jobject obj)
         touchInterface.mobileBackButton();
 }
 
+/* ControlInterpreter hands us raw -1..1 axis values, while the touch sticks
+ * arrive pre-multiplied by the fixed factors in leftStick()/rightStick()
+ * (15 forward, 10 strafe, 10 yaw, 2 pitch). Engines that scale their input off
+ * the touch magnitudes therefore see gamepad axes as far too weak or too hot -
+ * for Descent, pitch ran 3.5x hot. Matching the units here means one set of
+ * engine-side gains serves both input paths. */
+#ifdef GAMEPAD_MATCH_TOUCH_SCALING
+#define GP_FWD_SCALE    15.0f
+#define GP_SIDE_SCALE   10.0f
+#define GP_YAW_SCALE    10.0f
+#define GP_PITCH_SCALE   2.0f
+#else
+#define GP_FWD_SCALE     1.0f
+#define GP_SIDE_SCALE    1.0f
+#define GP_YAW_SCALE     1.0f
+#define GP_PITCH_SCALE   1.0f
+#endif
+
 void EXPORT_ME
 JAVA_FUNC(analogFwd)(JNIEnv *env, jobject obj, jfloat v, jfloat raw)
 {
     touchInterface.axisValue(ANALOGUE_AXIS_FWD, raw);
-    PortableMoveFwd(v);
+    PortableMoveFwd(v * GP_FWD_SCALE);
 }
 
 void EXPORT_ME
 JAVA_FUNC(analogSide)(JNIEnv *env, jobject obj, jfloat v, jfloat raw)
 {
     touchInterface.axisValue(ANALOGUE_AXIS_SIDE, raw);
-    PortableMoveSide(v);
+    PortableMoveSide(v * GP_SIDE_SCALE);
+}
+
+void EXPORT_ME
+JAVA_FUNC(analogVert)(JNIEnv *env, jobject obj, jfloat v, jfloat raw)
+{
+    touchInterface.axisValue(ANALOGUE_AXIS_VERT, raw);
+    PortableMoveVert(v);
+}
+
+void EXPORT_ME
+JAVA_FUNC(analogRoll)(JNIEnv *env, jobject obj, jfloat v, jfloat raw)
+{
+    touchInterface.axisValue(ANALOGUE_AXIS_ROLL, raw);
+    PortableRoll(v);
 }
 
 void EXPORT_ME
@@ -421,7 +453,7 @@ JAVA_FUNC(analogPitch)(JNIEnv *env, jobject obj, jint mode, jfloat v, jfloat raw
     if(mode == LOOK_MODE_MOUSE && !allowGyro)
         return;
 
-    PortableLookPitch(mode, v);
+    PortableLookPitch(mode, v * GP_PITCH_SCALE);
 }
 
 void EXPORT_ME
@@ -434,7 +466,7 @@ JAVA_FUNC(analogYaw)(JNIEnv *env, jobject obj, jint mode, jfloat v, jfloat raw)
     if(mode == LOOK_MODE_MOUSE && !allowGyro)
         return;
 
-    PortableLookYaw(mode, v);
+    PortableLookYaw(mode, v * GP_YAW_SCALE);
 }
 
 

@@ -160,6 +160,7 @@
 #define PORT_ACT_VERT_DOWN         129
 #define PORT_ACT_BANK_LEFT         130
 #define PORT_ACT_BANK_RIGHT        131
+#define PORT_ACT_REAR_VIEW         132
 
 //Generic custom buttons
 #define PORT_ACT_CUSTOM_0          150
@@ -258,6 +259,9 @@
 #define ANALOGUE_AXIS_SIDE  2
 #define ANALOGUE_AXIS_PITCH 4
 #define ANALOGUE_AXIS_YAW   8
+// 6DOF flight (Descent)
+#define ANALOGUE_AXIS_VERT  16
+#define ANALOGUE_AXIS_ROLL  32
 
 
 #define GAME_OPTION_AUTO_HIDE_GAMEPAD   0x1

@@ -50,6 +50,12 @@ void PortableMoveFwd(float fwd);
 
 void PortableMoveSide(float strafe);
 
+// 6DOF flight (Descent): vertical slide and roll/bank. Engines that are
+// not 6DOF never get these called - nothing binds an action to them.
+void PortableMoveVert(float vert);
+
+void PortableRoll(float roll);
+
 void PortableLookPitch(int mode, float pitch);
 
 void PortableLookYaw(int mode, float pitch);
