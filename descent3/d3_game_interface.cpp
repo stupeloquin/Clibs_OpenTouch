@@ -20,6 +20,7 @@
 #include <android/log.h>
 
 #include "SDL3/SDL.h"
+#include "SDL3/SDL_main.h"   // SDL_SetMainReady
 // SDL_InjectMouse and the ACTION_* codes it takes.
 #include "SDL_beloko_extra.h"
 
@@ -85,9 +86,30 @@ static void start_stdio_redirect(void)
         pthread_detach(t);
 }
 
+// Descent 3 takes its directories from the environment: D3_LOCAL for the
+// writable side and D3_DIR for the shared data. The framework already points
+// HOME at the game folder, so both come from there - one folder, as the other
+// ports use.
+static void set_game_directories(void)
+{
+    const char *game_path = getenv("HOME");
+
+    if (!game_path)
+        return;
+
+    setenv("D3_LOCAL", game_path, 1);
+    setenv("D3_DIR", game_path, 1);
+}
+
 void PortableInit(int argc, const char **argv)
 {
     start_stdio_redirect();
+    set_game_directories();
+
+    // SDL3 refuses to initialise unless it has been told main() was handled
+    // elsewhere, and here it was: the launcher dlopens the library and calls in
+    // through JNI, so SDL never gets to run its own entry point.
+    SDL_SetMainReady();
 
     dxx_main(argc, (char **) argv);
 
