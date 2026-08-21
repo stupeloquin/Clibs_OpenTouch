@@ -76,9 +76,29 @@ static void start_stdio_redirect(void)
         pthread_detach(t);
 }
 
+// DXX-Rebirth picks its home directory from D1X_REBIRTH_HOME / D2X_REBIRTH_HOME,
+// falling back to ~/.d{1,2}x-rebirth/. On Android that fallback lands inside the
+// game folder, which may be read-only or SAF-backed, so point it at the same
+// per-engine user_files directory the library is built to use. dxx-redux
+// ignores these variables.
+static void set_engine_home_directory(void)
+{
+    const char *user_files = getenv("USER_FILES");
+
+    if (!user_files)
+        return;
+
+    char path[1024];
+    snprintf(path, sizeof(path), "%s/%s", user_files, DXX_ANDROID_USER_DIR);
+
+    setenv("D1X_REBIRTH_HOME", path, 1);
+    setenv("D2X_REBIRTH_HOME", path, 1);
+}
+
 void PortableInit(int argc, const char **argv)
 {
     start_stdio_redirect();
+    set_engine_home_directory();
 
     dxx_main(argc, (char **) argv);
 
