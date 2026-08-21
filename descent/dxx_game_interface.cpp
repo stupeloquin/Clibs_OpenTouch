@@ -163,6 +163,42 @@ void PortableRoll(float roll)
     dxx_touch_axis_bank(roll, 0);
 }
 
+/* Gamepad axes are already -1..1, where full deflection should mean full rate,
+ * so they need no gain at all - unlike the touch sticks, whose values arrive
+ * pre-scaled and need the gains above. Sign conventions are applied by
+ * ControlInterpreter and match the touch path. */
+void PortableGamepadAxis(int axis, float value)
+{
+#ifdef DXX_TOUCH_DEBUG
+    LOGI("gamepad axis %d = %f", axis, value);
+#endif
+
+    switch(axis)
+    {
+        case ANALOGUE_AXIS_FWD:
+            dxx_touch_axis_forward(value);
+            break;
+        case ANALOGUE_AXIS_SIDE:
+            dxx_touch_axis_sideways(value);
+            break;
+        case ANALOGUE_AXIS_VERT:
+            dxx_touch_axis_vertical(value);
+            break;
+        case ANALOGUE_AXIS_PITCH:
+            dxx_touch_axis_pitch(value, 0);
+            break;
+        case ANALOGUE_AXIS_YAW:
+            /* As in PortableLookYaw: Descent's heading is positive to the left. */
+            dxx_touch_axis_heading(-value, 0);
+            break;
+        case ANALOGUE_AXIS_ROLL:
+            dxx_touch_axis_bank(value, 0);
+            break;
+        default:
+            break;
+    }
+}
+
 void PortableLookPitch(int mode, float pitch)
 {
 #ifdef DXX_TOUCH_DEBUG

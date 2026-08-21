@@ -54,6 +54,12 @@ void PortableMoveSide(float strafe);
 // not 6DOF never get these called - nothing binds an action to them.
 void PortableMoveVert(float vert);
 
+/* Gamepad axes, as ANALOGUE_AXIS_* with a -1..1 value. The touch sticks arrive
+ * pre-scaled by leftStick()/rightStick(), so an engine that compensates for
+ * that cannot use the same entry points for a gamepad without making it wildly
+ * oversensitive. Engines opt in with DXX_GAMEPAD_AXES. */
+void PortableGamepadAxis(int axis, float value);
+
 void PortableRoll(float roll);
 
 void PortableLookPitch(int mode, float pitch);

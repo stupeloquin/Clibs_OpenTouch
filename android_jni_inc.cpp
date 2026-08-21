@@ -399,48 +399,51 @@ JAVA_FUNC(backButton)(JNIEnv *env, jobject obj)
 
 /* ControlInterpreter hands us raw -1..1 axis values, while the touch sticks
  * arrive pre-multiplied by the fixed factors in leftStick()/rightStick()
- * (15 forward, 10 strafe, 10 yaw, 2 pitch). Engines that scale their input off
- * the touch magnitudes therefore see gamepad axes as far too weak or too hot -
- * for Descent, pitch ran 3.5x hot. Matching the units here means one set of
- * engine-side gains serves both input paths. */
-#ifdef GAMEPAD_MATCH_TOUCH_SCALING
-#define GP_FWD_SCALE    15.0f
-#define GP_SIDE_SCALE   10.0f
-#define GP_YAW_SCALE    10.0f
-#define GP_PITCH_SCALE   2.0f
-#else
-#define GP_FWD_SCALE     1.0f
-#define GP_SIDE_SCALE    1.0f
-#define GP_YAW_SCALE     1.0f
-#define GP_PITCH_SCALE   1.0f
-#endif
-
+ * (15 forward, 10 strafe, 10 yaw, 2 pitch). An engine that compensates for the
+ * touch scaling therefore cannot share those entry points with the gamepad, so
+ * engines can opt into a separate gamepad path with DXX_GAMEPAD_AXES. */
 void EXPORT_ME
 JAVA_FUNC(analogFwd)(JNIEnv *env, jobject obj, jfloat v, jfloat raw)
 {
     touchInterface.axisValue(ANALOGUE_AXIS_FWD, raw);
-    PortableMoveFwd(v * GP_FWD_SCALE);
+#ifdef DXX_GAMEPAD_AXES
+    PortableGamepadAxis(ANALOGUE_AXIS_FWD, v);
+#else
+    PortableMoveFwd(v);
+#endif
 }
 
 void EXPORT_ME
 JAVA_FUNC(analogSide)(JNIEnv *env, jobject obj, jfloat v, jfloat raw)
 {
     touchInterface.axisValue(ANALOGUE_AXIS_SIDE, raw);
-    PortableMoveSide(v * GP_SIDE_SCALE);
+#ifdef DXX_GAMEPAD_AXES
+    PortableGamepadAxis(ANALOGUE_AXIS_SIDE, v);
+#else
+    PortableMoveSide(v);
+#endif
 }
 
 void EXPORT_ME
 JAVA_FUNC(analogVert)(JNIEnv *env, jobject obj, jfloat v, jfloat raw)
 {
     touchInterface.axisValue(ANALOGUE_AXIS_VERT, raw);
+#ifdef DXX_GAMEPAD_AXES
+    PortableGamepadAxis(ANALOGUE_AXIS_VERT, v);
+#else
     PortableMoveVert(v);
+#endif
 }
 
 void EXPORT_ME
 JAVA_FUNC(analogRoll)(JNIEnv *env, jobject obj, jfloat v, jfloat raw)
 {
     touchInterface.axisValue(ANALOGUE_AXIS_ROLL, raw);
+#ifdef DXX_GAMEPAD_AXES
+    PortableGamepadAxis(ANALOGUE_AXIS_ROLL, v);
+#else
     PortableRoll(v);
+#endif
 }
 
 void EXPORT_ME
@@ -453,7 +456,12 @@ JAVA_FUNC(analogPitch)(JNIEnv *env, jobject obj, jint mode, jfloat v, jfloat raw
     if(mode == LOOK_MODE_MOUSE && !allowGyro)
         return;
 
-    PortableLookPitch(mode, v * GP_PITCH_SCALE);
+#ifdef DXX_GAMEPAD_AXES
+    if(mode == LOOK_MODE_JOYSTICK)
+        PortableGamepadAxis(ANALOGUE_AXIS_PITCH, v);
+    else
+#endif
+    PortableLookPitch(mode, v);
 }
 
 void EXPORT_ME
@@ -466,7 +474,12 @@ JAVA_FUNC(analogYaw)(JNIEnv *env, jobject obj, jint mode, jfloat v, jfloat raw)
     if(mode == LOOK_MODE_MOUSE && !allowGyro)
         return;
 
-    PortableLookYaw(mode, v * GP_YAW_SCALE);
+#ifdef DXX_GAMEPAD_AXES
+    if(mode == LOOK_MODE_JOYSTICK)
+        PortableGamepadAxis(ANALOGUE_AXIS_YAW, v);
+    else
+#endif
+    PortableLookYaw(mode, v);
 }
 
 
