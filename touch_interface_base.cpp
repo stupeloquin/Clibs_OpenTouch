@@ -6,7 +6,12 @@
 #include "TouchControlsInterface.h"
 #include "TouchControlsContainer.h"
 #include "Framebuffer.h"
+#ifdef USE_SDL3
+// The SDL3 fork keeps this at its own root, which is on the include path.
+#include "SDL_beloko_extra.h"
+#else
 #include "../../SDL_beloko_extra.h"
+#endif
 
 #ifdef USE_SDL3
 #include "SDL3/SDL.h"
@@ -238,7 +243,21 @@ void TouchInterfaceBase::touchSettingsCallback(touchcontrols::tTouchSettings set
     if(tcDPadInventory) tcDPadInventory->setColour(touchSettings.defaultColor);
 }
 
+#ifdef USE_SDL3
+// SDL3's text-input calls take a window, and the ports Emile builds export a
+// global named `window` for this. Rather than require that of every engine, ask
+// SDL: there is only ever one window here, and it owns the answer.
+static SDL_Window *opentouch_sdl_window(void)
+{
+    int count = 0;
+    SDL_Window **windows = SDL_GetWindows(&count);
+
+    return (windows && count > 0) ? windows[0] : NULL;
+}
+#define window opentouch_sdl_window()
+#else
 extern "C" SDL_Window* window;
+#endif
 
 void TouchInterfaceBase::gameButton(int state, int code)
 {

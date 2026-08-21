@@ -1,7 +1,12 @@
 #include <jni.h>
 #include "TouchControlsInterface.h"
 #include "JNITouchControlsUtils.h"
+#ifdef USE_SDL3
+// The SDL3 fork keeps this at its own root, which is on the include path.
+#include "SDL_beloko_extra.h"
+#else
 #include "../../SDL_beloko_extra.h"
+#endif
 
 #include "TouchControlsInterface.h"
 #include "touch_interface.h"
