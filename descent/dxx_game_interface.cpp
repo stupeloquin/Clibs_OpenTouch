@@ -290,6 +290,7 @@ void PortableAction(int state, int action)
         case PORT_ACT_MENU_LEFT:    inject_key(state, SDL_SCANCODE_LEFT); break;
         case PORT_ACT_MENU_RIGHT:   inject_key(state, SDL_SCANCODE_RIGHT); break;
         case PORT_ACT_MENU_SELECT:  inject_key(state, SDL_SCANCODE_RETURN); break;
+        case PORT_ACT_MENU_BACK:    inject_key(state, SDL_SCANCODE_ESCAPE); break;
         case PORT_ACT_MENU_ABORT:   inject_key(state, SDL_SCANCODE_ESCAPE); break;
         case PORT_ACT_MENU_CONFIRM: inject_key(state, SDL_SCANCODE_Y); break;
         case PORT_ACT_QUICKSAVE:    inject_key(state, SDL_SCANCODE_F2); break;
