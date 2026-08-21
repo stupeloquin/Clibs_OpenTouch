@@ -7,6 +7,9 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <pthread.h>
+#include <unistd.h>
+#include <android/log.h>
 
 #include "SDL.h"
 #include "SDL_keyboard.h"
@@ -22,8 +25,61 @@ extern int dxx_main(int argc, char *argv[]);
 
 // ---------------------------------------------------------------- lifecycle
 
+// The engine talks through con_printf, which writes to stdout. SDL only
+// redirects stdout to logcat when it runs SDL_main itself, and this port enters
+// through NativeLib.init instead - so pump it across ourselves. Without this
+// the engine's own diagnostics are invisible.
+static void *stdio_to_logcat(void *arg)
+{
+    int fd = (int) (intptr_t) arg;
+    char line[512];
+    size_t used = 0;
+
+    for (;;)
+    {
+        char c;
+        const ssize_t n = read(fd, &c, 1);
+
+        if (n <= 0)
+            break;
+
+        if (c == '\n' || used == sizeof(line) - 1)
+        {
+            line[used] = 0;
+            if (used)
+                __android_log_write(ANDROID_LOG_INFO, "DxxEngine", line);
+            used = 0;
+        }
+        else
+            line[used++] = c;
+    }
+
+    return nullptr;
+}
+
+static void start_stdio_redirect(void)
+{
+    int fds[2];
+
+    if (pipe(fds) != 0)
+        return;
+
+    dup2(fds[1], STDOUT_FILENO);
+    dup2(fds[1], STDERR_FILENO);
+    close(fds[1]);
+
+    setvbuf(stdout, nullptr, _IOLBF, 0);
+    setvbuf(stderr, nullptr, _IONBF, 0);
+
+    pthread_t t;
+    if (pthread_create(&t, nullptr, stdio_to_logcat, (void *) (intptr_t) fds[0]) == 0)
+        pthread_detach(t);
+}
+
 void PortableInit(int argc, const char **argv)
 {
+    start_stdio_redirect();
+
     dxx_main(argc, (char **) argv);
 
     // dxx_main only returns when the player quits.
