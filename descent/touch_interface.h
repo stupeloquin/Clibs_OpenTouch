@@ -36,6 +36,12 @@ private:
     // Weapon controls differ between the games: D1 has 5 primaries and 5
     // secondaries, D2 adds a super version of each.
     bool isD2() const { return gameType == DESCENT_2; }
+
+    // Layout files are named after the game, not the port, so a layout follows
+    // the game from one engine to another. Ports that build a library per game
+    // have the name at compile time; D2X-XL plays both games from one library,
+    // so it has to ask which game is running.
+    std::string layoutName() const;
 };
 
 #endif /* DESCENT_TOUCH_INTERFACE_H */

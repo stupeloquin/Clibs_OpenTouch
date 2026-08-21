@@ -33,6 +33,15 @@ void TouchInterface::openGLEnd()
     touchcontrols::gl_endRender();
 }
 
+std::string TouchInterface::layoutName() const
+{
+#ifdef DXX_LAYOUT_FROM_GAME_TYPE
+    return isD2() ? "descent2" : "descent1";
+#else
+    return ENGINE_NAME;
+#endif
+}
+
 void TouchInterface::createControls(std::string filesPath)
 {
     tcMenuMain = new touchcontrols::TouchControls("menu", false, true, 10, false);
@@ -239,7 +248,7 @@ void TouchInterface::createControls(std::string filesPath)
     controlsContainer.addControlGroup(tcBlank);
     controlsContainer.addControlGroup(tcMouse);
 
-    std::string newSettings = (std::string) filesPath + "/touch_settings_" ENGINE_NAME ".xml";
+    std::string newSettings = (std::string) filesPath + "/touch_settings_" + layoutName() + ".xml";
     UI_tc = touchcontrols::createDefaultSettingsUI(&controlsContainer, newSettings);
     UI_tc->setAlpha(1);
 
@@ -248,11 +257,11 @@ void TouchInterface::createControls(std::string filesPath)
     // families, so a layout follows the game rather than the port.
 
     tcMenuMain->setXMLFile((std::string) filesPath + "/menu.xml");
-    tcGameMain->setXMLFile((std::string) filesPath + "/game_" ENGINE_NAME ".xml");
-    tcGameWeapons->setXMLFile((std::string) filesPath + "/weapons_" ENGINE_NAME ".xml");
-    tcWeaponWheel->setXMLFile((std::string) filesPath + "/weapon_wheel_" ENGINE_NAME ".xml");
-    tcAutomap->setXMLFile((std::string) filesPath + "/automap_" ENGINE_NAME ".xml");
-    tcCustomButtons->setXMLFile((std::string) filesPath + "/custom_" ENGINE_NAME ".xml");
+    tcGameMain->setXMLFile((std::string) filesPath + "/game_" + layoutName() + ".xml");
+    tcGameWeapons->setXMLFile((std::string) filesPath + "/weapons_" + layoutName() + ".xml");
+    tcWeaponWheel->setXMLFile((std::string) filesPath + "/weapon_wheel_" + layoutName() + ".xml");
+    tcAutomap->setXMLFile((std::string) filesPath + "/automap_" + layoutName() + ".xml");
+    tcCustomButtons->setXMLFile((std::string) filesPath + "/custom_" + layoutName() + ".xml");
 }
 
 void TouchInterface::blankButton(int state, int code)
