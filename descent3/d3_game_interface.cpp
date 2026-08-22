@@ -43,6 +43,10 @@ extern void d3_touch_move_mouse_to(float nx, float ny);
 // see ddio/lnxmouse.cpp.
 extern void d3_touch_set_pad_look(float yaw, float pitch);
 
+// How far the movement sticks are held, added to the engine's own axes each
+// frame - see Descent3/Controls.cpp.
+extern void d3_touch_set_pad_move(float fwd, float side, float vert, float bank);
+
 // ---------------------------------------------------------------- lifecycle
 
 // The engine logs through plog to stdout, and SDL only redirects stdout to
@@ -211,42 +215,68 @@ void PortableMouseButton(int state, int button, float dx, float dy)
     d3_touch_move_mouse_to(lastTouchX, lastTouchY);
 }
 
-// Thrust has no mouse or keyboard analogue in Descent 3 - the axes are joystick
-// only - so the movement sticks fall back to the digital thrust keys and are
-// either on or off. A virtual SDL joystick would give real analogue thrust and
-// is the obvious next step; this at least flies.
-static void axis_as_keys(float value, SDL_Scancode positive, SDL_Scancode negative)
-{
-    static const float threshold = 0.2f;
+/* The movement axes, held. Descent 3 reads thrust from a joystick, and the
+ * sticks here are not one as far as its controller system is concerned, so
+ * these went in as presses of the thrust keys - which meant a stick was either
+ * off or hard over with nothing in between. The engine holds the deflection
+ * instead and adds it where it reads its own axes, so full deflection is full
+ * thrust and everything short of it is proportional.
+ *
+ * The directions are the ones the keys used to stand for: forward, right, up,
+ * and bank to the right.
+ */
+static float moveFwd = 0.0f;
+static float moveSide = 0.0f;
+static float moveVert = 0.0f;
+static float moveBank = 0.0f;
 
-    inject_key(value > threshold, positive);
-    inject_key(value < -threshold, negative);
+static void send_movement(void)
+{
+    d3_touch_set_pad_move(moveFwd, moveSide, moveVert, moveBank);
 }
+
+/* TouchJoy reports deflection as normalised screen fractions clamped to +/-1,
+ * so reaching 1.0 would mean dragging a whole screen width; a comfortable thumb
+ * throw is nearer 0.1. leftStick() has already multiplied that by the user's
+ * sensitivity and a fixed factor - 15 forward, 10 strafe - which lands a normal
+ * throw at about the full deflection the engine wants. So its output is taken
+ * as the rate directly, and only the gain that evens the two axes up is added.
+ *
+ * The gamepad arrives as -1..1 already and needs none of this, so it sets the
+ * axes itself rather than coming through here.
+ */
+static const float kGainFwd = 1.0f;
+static const float kGainSide = 1.5f;
 
 void PortableMoveFwd(float fwd)
 {
-    axis_as_keys(fwd, SDL_SCANCODE_A, SDL_SCANCODE_Z);
+    moveFwd = fwd * kGainFwd;
+    send_movement();
 }
 
 void PortableMoveSide(float strafe)
 {
-    axis_as_keys(strafe, SDL_SCANCODE_KP_3, SDL_SCANCODE_KP_1);
+    moveSide = strafe * kGainSide;
+    send_movement();
 }
 
 void PortableMoveVert(float vert)
 {
-    axis_as_keys(vert, SDL_SCANCODE_KP_MINUS, SDL_SCANCODE_KP_PLUS);
+    moveVert = vert;
+    send_movement();
 }
 
 void PortableMove(float fwd, float strafe)
 {
-    PortableMoveFwd(fwd);
-    PortableMoveSide(strafe);
+    moveFwd = fwd * kGainFwd;
+    moveSide = strafe * kGainSide;
+    send_movement();
 }
 
 void PortableRoll(float roll)
 {
-    axis_as_keys(roll, SDL_SCANCODE_E, SDL_SCANCODE_Q);
+    moveBank = roll;
+    send_movement();
 }
 
 /* The look axes are held, not momentary. A pad reports an axis only when it
@@ -266,10 +296,10 @@ void PortableGamepadAxis(int axis, float value)
 {
     switch(axis)
     {
-        case ANALOGUE_AXIS_FWD:   PortableMoveFwd(value); break;
-        case ANALOGUE_AXIS_SIDE:  PortableMoveSide(value); break;
-        case ANALOGUE_AXIS_VERT:  PortableMoveVert(value); break;
-        case ANALOGUE_AXIS_ROLL:  PortableRoll(value); break;
+        case ANALOGUE_AXIS_FWD:   moveFwd = value;  send_movement(); break;
+        case ANALOGUE_AXIS_SIDE:  moveSide = value; send_movement(); break;
+        case ANALOGUE_AXIS_VERT:  moveVert = value; send_movement(); break;
+        case ANALOGUE_AXIS_ROLL:  moveBank = value; send_movement(); break;
         case ANALOGUE_AXIS_PITCH:
             padPitch = value;
             d3_touch_set_pad_look(-padYaw, padPitch);
