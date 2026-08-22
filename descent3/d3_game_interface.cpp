@@ -39,6 +39,10 @@ extern int d3_touch_in_game(void);
 // Places the cursor from a fraction of the window - see ddio/lnxmouse.cpp.
 extern void d3_touch_move_mouse_to(float nx, float ny);
 
+// How far the look stick is held, paid out a frame at a time by the engine -
+// see ddio/lnxmouse.cpp.
+extern void d3_touch_set_pad_look(float yaw, float pitch);
+
 // ---------------------------------------------------------------- lifecycle
 
 // The engine logs through plog to stdout, and SDL only redirects stdout to
@@ -245,6 +249,19 @@ void PortableRoll(float roll)
     axis_as_keys(roll, SDL_SCANCODE_E, SDL_SCANCODE_Q);
 }
 
+/* The look axes are held, not momentary. A pad reports an axis only when it
+ * moves, so a stick pushed over and kept there sends one event and nothing
+ * more: fed in as mouse motion the way the touch look is, the view turned once
+ * per flick of the stick and otherwise sat still. The engine keeps the
+ * deflection and pays it out every frame instead - see d3_touch_set_pad_look.
+ *
+ * ControlInterpreter hands the joystick path its yaw already negated, which the
+ * touch path is not, so full left arrives looking like full right. The touch
+ * sticks are the ones that read correctly, so the pad is brought round to them.
+ */
+static float padYaw = 0.0f;
+static float padPitch = 0.0f;
+
 void PortableGamepadAxis(int axis, float value)
 {
     switch(axis)
@@ -253,8 +270,14 @@ void PortableGamepadAxis(int axis, float value)
         case ANALOGUE_AXIS_SIDE:  PortableMoveSide(value); break;
         case ANALOGUE_AXIS_VERT:  PortableMoveVert(value); break;
         case ANALOGUE_AXIS_ROLL:  PortableRoll(value); break;
-        case ANALOGUE_AXIS_PITCH: PortableLookPitch(0, value); break;
-        case ANALOGUE_AXIS_YAW:   PortableLookYaw(0, value); break;
+        case ANALOGUE_AXIS_PITCH:
+            padPitch = value;
+            d3_touch_set_pad_look(-padYaw, padPitch);
+            break;
+        case ANALOGUE_AXIS_YAW:
+            padYaw = value;
+            d3_touch_set_pad_look(-padYaw, padPitch);
+            break;
         default: break;
     }
 }
