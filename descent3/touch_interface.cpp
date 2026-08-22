@@ -87,7 +87,13 @@ void TouchInterface::createControls(std::string filesPath)
     tcMenuMain->addControl(new touchcontrols::Button("gyro", touchcontrols::RectF(24, 0, 26, 2), "gyro", KEY_SHOW_GYRO));
     tcMenuMain->addControl(new touchcontrols::Button("load_save_touch", touchcontrols::RectF(20, 0, 22, 2), "touchscreen_save", KEY_LOAD_SAVE_CONTROLS));
 
-    touchcontrols::Mouse *mouseMainMenu = new touchcontrols::Mouse("mouse", touchcontrols::RectF(0, 2, 26, 16), "");
+    // The whole layout, not the part below the top row of buttons: what this
+    // control reports is a fraction of its own rectangle, and the menus are
+    // driven by pointing at them, so that rectangle has to be the one the
+    // game's picture occupies. The layout is aspect-fixed and the picture is
+    // aspect-fit into the same window, so covering the layout covers the
+    // picture. The buttons still take their own touches first.
+    touchcontrols::Mouse *mouseMainMenu = new touchcontrols::Mouse("mouse", touchcontrols::RectF(0, 0, 26, 16), "");
     mouseMainMenu->setHideGraphics(true);
     mouseMainMenu->setEditable(false);
     mouseMainMenu->signal_action.connect(sigc::mem_fun(this, &TouchInterface::mouseMove));
