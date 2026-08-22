@@ -355,6 +355,10 @@ void PortableAction(int state, int action)
         case PORT_ACT_MENU_LEFT:    inject_key(state, SDL_SCANCODE_LEFT); break;
         case PORT_ACT_MENU_RIGHT:   inject_key(state, SDL_SCANCODE_RIGHT); break;
         case PORT_ACT_MENU_SELECT:  inject_key(state, SDL_SCANCODE_RETURN); break;
+        // Focus moves on tab in this engine's dialogs, not on the arrows, and
+        // enter then presses whatever holds it. Without a tab there is no way
+        // to reach a plain line of text with a controller at all.
+        case PORT_ACT_MENU_TAB:     inject_key(state, SDL_SCANCODE_TAB); break;
         case PORT_ACT_MENU_BACK:
         case PORT_ACT_MENU_ABORT:   inject_key(state, SDL_SCANCODE_ESCAPE); break;
         case PORT_ACT_MENU_CONFIRM: inject_key(state, SDL_SCANCODE_Y); break;
