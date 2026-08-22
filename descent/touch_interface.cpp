@@ -71,6 +71,10 @@ void TouchInterface::createControls(std::string filesPath)
     tcMenuMain->addControl(new touchcontrols::Button("left_arrow", touchcontrols::RectF(17, 13, 20, 16), "arrow_left", PORT_ACT_MENU_LEFT));
     tcMenuMain->addControl(new touchcontrols::Button("right_arrow", touchcontrols::RectF(23, 13, 26, 16), "arrow_right", PORT_ACT_MENU_RIGHT));
     tcMenuMain->addControl(new touchcontrols::Button("enter", touchcontrols::RectF(0, 10, 6, 16), "enter", PORT_ACT_MENU_SELECT));
+    // Checkboxes and radio buttons in Descent's menus answer to space, and to
+    // nothing else: enter leaves the screen rather than ticking the box, so
+    // without this there is no way to change one of those settings by touch.
+    tcMenuMain->addControl(new touchcontrols::Button("toggle", touchcontrols::RectF(7, 13, 10, 16), "toggle", SDL_SCANCODE_SPACE));
 
     tcMenuMain->addControl(new touchcontrols::Button("keyboard", touchcontrols::RectF(2, 0, 4, 2), "keyboard", KEY_SHOW_KBRD));
     tcMenuMain->addControl(new touchcontrols::Button("gamepad", touchcontrols::RectF(22, 0, 24, 2), "gamepad", KEY_SHOW_GAMEPAD));

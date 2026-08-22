@@ -455,6 +455,13 @@ void TouchInterfaceBase::menuButton(int state, int code)
     {
         PortableKeyEvent(state, code, 0);
     }
+    else if(code == SDL_SCANCODE_SPACE)
+    {
+        // Descent's menus toggle a checkbox or a radio button with space, and
+        // nothing else does it - enter closes the screen instead. Port action
+        // codes start at 0x200, so a scancode can be told apart from one.
+        PortableKeyEvent(state, code, 0);
+    }
     else if(code == KEY_SHOW_GYRO)
     {
         // Show gyro options
