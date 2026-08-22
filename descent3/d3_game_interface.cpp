@@ -33,6 +33,12 @@ extern "C"
 // Renamed from main() under Android, see Descent3/sdlmain.cpp.
 extern int dxx_main(int argc, char *argv[]);
 
+// True while a level is running - see Descent3/game.cpp.
+extern int d3_touch_in_game(void);
+
+// Places the cursor from a fraction of the window - see ddio/lnxmouse.cpp.
+extern void d3_touch_move_mouse_to(float nx, float ny);
+
 // ---------------------------------------------------------------- lifecycle
 
 // The engine logs through plog to stdout, and SDL only redirects stdout to
@@ -144,29 +150,61 @@ int PortableKeyEvent(int state, int code, int unitcode)
 // Descent 3 takes pitch and heading from the mouse axes by default
 // (ctfPITCH_DOWNAXIS and ctfHEADING_RIGHTAXIS, both ctMouseAxis), so the look
 // stick drives relative mouse motion.
+//
+// Everything here arrives as a fraction of the screen, while Descent 3 counts
+// mouse motion in pixels of its own 640x480 menu space - it accumulates the
+// relative deltas into a cursor position and clamps it there. Undo that
+// mismatch, or a full swipe moves the cursor a pixel or two.
+static const float kMenuWidth = 640.0f;
+static const float kMenuHeight = 480.0f;
+
+// The look stick is the flight control, so it wants a gentler hand than the
+// cursor does - full deflection should be a brisk turn, not a screen-crossing
+// jump.
+static const float kLookScale = 80.0f;
+
 void PortableLookPitch(int mode, float pitch)
 {
-    SDL_InjectMouse(0, ACTION_MOVE, 0, pitch, 1);
+    SDL_InjectMouse(0, ACTION_MOVE, 0, pitch * kLookScale, 1);
 }
 
 void PortableLookYaw(int mode, float yaw)
 {
-    SDL_InjectMouse(0, ACTION_MOVE, yaw, 0, 1);
+    SDL_InjectMouse(0, ACTION_MOVE, yaw * kLookScale, 0, 1);
 }
 
+// Dragging a finger anywhere not covered by a control moves the pointer, which
+// is how the menus are driven.
 void PortableMouse(float dx, float dy)
 {
-    SDL_InjectMouse(0, ACTION_MOVE, dx, dy, 1);
+    SDL_InjectMouse(0, ACTION_MOVE, dx * kMenuWidth, dy * kMenuHeight, 1);
 }
 
+// Where the finger last was, as a fraction of the window. Kept so the cursor
+// can be put back after a button event - see PortableMouseButton.
+static float lastTouchX = 0.5f;
+static float lastTouchY = 0.5f;
+
+// The menus are driven by touching them directly: the finger's position is
+// where the cursor should be, so place it rather than nudging it with deltas.
 void PortableMouseAbs(float x, float y)
 {
-    SDL_InjectMouse(0, ACTION_HOVER_MOVE, x, y, 0);
+    lastTouchX = x;
+    lastTouchY = y;
+    d3_touch_move_mouse_to(x, y);
 }
 
 void PortableMouseButton(int state, int button, float dx, float dy)
 {
-    SDL_InjectMouse(button, state ? ACTION_DOWN : ACTION_UP, dx, dy, 0);
+    // SDL wants the mask of buttons held *after* the change and works out which
+    // one moved by itself. Passing the released button on the way up leaves it
+    // with nothing changed, so it sends a release for button 0 and the engine
+    // never sees the click end.
+    SDL_InjectMouse(state ? button : 0, state ? ACTION_DOWN : ACTION_UP, 0, 0, 0);
+
+    // Both carry a mouse motion to the coordinates given, and the engine adds
+    // that motion to its own cursor - so put the cursor back under the finger.
+    d3_touch_move_mouse_to(lastTouchX, lastTouchY);
 }
 
 // Thrust has no mouse or keyboard analogue in Descent 3 - the axes are joystick
@@ -317,10 +355,10 @@ int PortableGetMouseTapMode(void)
 
 touchscreemode_t PortableGetScreenMode()
 {
-    // Until the engine reports its own state, the game layout is always up.
-    // Descent 3's menus are mouse-driven, so the touchscreen works on them
-    // without a menu overlay of its own.
-    return TS_GAME;
+    // Descent 3's menus are mouse driven, so outside a level the overlay needs
+    // its menu layout - a pointer and the arrows - rather than the flight
+    // sticks, which would otherwise swallow every touch.
+    return d3_touch_in_game() ? TS_GAME : TS_MENU;
 }
 
 } // extern "C"

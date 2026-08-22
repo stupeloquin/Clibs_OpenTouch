@@ -690,8 +690,27 @@ void TouchInterfaceBase::selectWeaponButton(int state, int code)
 
 void TouchInterfaceBase::mouseMove(int action, float x, float y, float mouse_x, float mouse_y)
 {
-#if defined(GZDOOM) || defined(ZANDRONUM_30) || defined(D3ES) || defined(EDUKE32)// todo
+// DESCENT3 is Descent 3, not Doom 3 (D3ES): its menus are mouse driven, so it
+// wants the same drag-the-cursor and tap-to-click handling.
+#if defined(GZDOOM) || defined(ZANDRONUM_30) || defined(D3ES) || defined(EDUKE32) || defined(DESCENT3)// todo
 
+#ifdef DESCENT3
+    // Descent 3's menus are touched directly: the cursor goes where the finger
+    // is, and a tap presses whatever is under it. Relative deltas would mean
+    // dragging a cursor you cannot see to a target you cannot aim at.
+    if(action == TOUCHMOUSE_MOVE || action == TOUCHMOUSE_DOWN)
+    {
+        PortableMouseAbs(x, y);
+    }
+    else if(action == TOUCHMOUSE_TAP)
+    {
+        PortableMouseAbs(x, y);
+        waitFrames(1);
+        PortableMouseButton(1, BUTTON_PRIMARY, 0, 0);
+        waitFrames(3);
+        PortableMouseButton(0, BUTTON_PRIMARY, 0, 0);
+    }
+#else
     if(action == TOUCHMOUSE_MOVE)
     {
         PortableMouse(mouse_x, mouse_y);
@@ -703,6 +722,7 @@ void TouchInterfaceBase::mouseMove(int action, float x, float y, float mouse_x, 
         waitFrames(3);
         PortableMouseButton(0, BUTTON_PRIMARY, 0, 0);
     }
+#endif
 
 #endif
 
@@ -724,7 +744,7 @@ void TouchInterfaceBase::mouseMove(int action, float x, float y, float mouse_x, 
 
 void TouchInterfaceBase::mouseButton(int state, int code)
 {
-#if defined(GZDOOM) || defined(ZANDRONUM_30) || defined(D3ES) || defined(QUAKESPASM_SPIKED) || defined(QUAKESPASM) || defined(DARKPLACES) || defined(FTEQW) || defined(EDUKE32)
+#if defined(GZDOOM) || defined(ZANDRONUM_30) || defined(D3ES) || defined(QUAKESPASM_SPIKED) || defined(QUAKESPASM) || defined(DARKPLACES) || defined(FTEQW) || defined(EDUKE32) || defined(DESCENT3)
     LOGI("mouseButton %d, %d", state, code);
 
     // Hide the mouse
