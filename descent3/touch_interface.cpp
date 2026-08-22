@@ -82,6 +82,21 @@ void TouchInterface::createControls(std::string filesPath)
     tcMenuMain->addControl(new touchcontrols::Button("right_arrow", touchcontrols::RectF(23, 13, 26, 16), "arrow_right", PORT_ACT_MENU_RIGHT));
     tcMenuMain->addControl(new touchcontrols::Button("enter", touchcontrols::RectF(0, 10, 6, 16), "enter", PORT_ACT_MENU_SELECT));
 
+    // Descent 3's dialogs can be driven from the keys alone, which the pointer
+    // does not make redundant: aiming a fingertip at a line of text is fussy,
+    // and a hardware controller has nothing to point with.
+    //
+    // Tab is the missing piece. It is what the UI moves focus with - not the
+    // arrows, which only work inside a list - and enter then presses whatever
+    // has focus, a plain line of text as readily as a button. Without a tab
+    // key, focus could not be moved at all, so enter had nothing to press and
+    // the screens looked like they could only be poked at with the pointer.
+    //
+    // Space is here for the check boxes and radio buttons in the options
+    // screens, which take it in their own right.
+    tcMenuMain->addControl(new touchcontrols::Button("tab", touchcontrols::RectF(7, 13, 10, 16), "key_tab", SDL_SCANCODE_TAB));
+    tcMenuMain->addControl(new touchcontrols::Button("space", touchcontrols::RectF(11, 13, 14, 16), "toggle", SDL_SCANCODE_SPACE));
+
     tcMenuMain->addControl(new touchcontrols::Button("keyboard", touchcontrols::RectF(2, 0, 4, 2), "keyboard", KEY_SHOW_KBRD));
     tcMenuMain->addControl(new touchcontrols::Button("gamepad", touchcontrols::RectF(22, 0, 24, 2), "gamepad", KEY_SHOW_GAMEPAD));
     tcMenuMain->addControl(new touchcontrols::Button("gyro", touchcontrols::RectF(24, 0, 26, 2), "gyro", KEY_SHOW_GYRO));

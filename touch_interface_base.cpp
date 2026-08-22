@@ -455,6 +455,11 @@ void TouchInterfaceBase::menuButton(int state, int code)
     {
         PortableKeyEvent(state, code, 0);
     }
+    else if(code == SDL_SCANCODE_TAB)
+    {
+        // Descent 3's menus move focus with tab.
+        PortableKeyEvent(state, code, 0);
+    }
     else if(code == SDL_SCANCODE_SPACE)
     {
         // Descent's menus toggle a checkbox or a radio button with space, and
