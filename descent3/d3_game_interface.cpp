@@ -171,14 +171,18 @@ static const float kMenuHeight = 480.0f;
 // jump.
 static const float kLookScale = 80.0f;
 
+// Both axes arrive with the opposite sign to what the engine wants, so both are
+// negated here rather than in the engine: pushing the stick right should look
+// right, and pushing it forward should pitch the nose down, which is what the
+// pitch-invert option in the game's own menu is then free to reverse.
 void PortableLookPitch(int mode, float pitch)
 {
-    SDL_InjectMouse(0, ACTION_MOVE, 0, pitch * kLookScale, 1);
+    SDL_InjectMouse(0, ACTION_MOVE, 0, -pitch * kLookScale, 1);
 }
 
 void PortableLookYaw(int mode, float yaw)
 {
-    SDL_InjectMouse(0, ACTION_MOVE, yaw * kLookScale, 0, 1);
+    SDL_InjectMouse(0, ACTION_MOVE, -yaw * kLookScale, 0, 1);
 }
 
 // Dragging a finger anywhere not covered by a control moves the pointer, which
@@ -285,9 +289,9 @@ void PortableRoll(float roll)
  * per flick of the stick and otherwise sat still. The engine keeps the
  * deflection and pays it out every frame instead - see d3_touch_set_pad_look.
  *
- * ControlInterpreter hands the joystick path its yaw already negated, which the
- * touch path is not, so full left arrives looking like full right. The touch
- * sticks are the ones that read correctly, so the pad is brought round to them.
+ * Both axes are negated for the same reason the touch look is - see
+ * PortableLookPitch. The two paths take their sign convention from the same
+ * place, so they negate the same way.
  */
 static float padYaw = 0.0f;
 static float padPitch = 0.0f;
@@ -302,11 +306,11 @@ void PortableGamepadAxis(int axis, float value)
         case ANALOGUE_AXIS_ROLL:  moveBank = value; send_movement(); break;
         case ANALOGUE_AXIS_PITCH:
             padPitch = value;
-            d3_touch_set_pad_look(-padYaw, padPitch);
+            d3_touch_set_pad_look(-padYaw, -padPitch);
             break;
         case ANALOGUE_AXIS_YAW:
             padYaw = value;
-            d3_touch_set_pad_look(-padYaw, padPitch);
+            d3_touch_set_pad_look(-padYaw, -padPitch);
             break;
         default: break;
     }
@@ -358,7 +362,13 @@ void PortableAction(int state, int action)
         // Focus moves on tab in this engine's dialogs, not on the arrows, and
         // enter then presses whatever holds it. Without a tab there is no way
         // to reach a plain line of text with a controller at all.
-        case PORT_ACT_MENU_TAB:     inject_key(state, SDL_SCANCODE_TAB); break;
+        /* Menus only. In game Tab is the automap, and the button this sits on
+         * (L2) is also slide-down - so sending Tab in game opened the map
+         * instead of sliding. */
+        case PORT_ACT_MENU_TAB:
+            if (!d3_touch_in_game())
+                inject_key(state, SDL_SCANCODE_TAB);
+            break;
         case PORT_ACT_MENU_BACK:
         case PORT_ACT_MENU_ABORT:   inject_key(state, SDL_SCANCODE_ESCAPE); break;
         case PORT_ACT_MENU_CONFIRM: inject_key(state, SDL_SCANCODE_Y); break;
