@@ -94,8 +94,12 @@ void TouchInterface::createControls(std::string filesPath)
     //
     // Space is here for the check boxes and radio buttons in the options
     // screens, which take it in their own right.
-    tcMenuMain->addControl(new touchcontrols::Button("tab", touchcontrols::RectF(7, 13, 10, 16), "key_tab", SDL_SCANCODE_TAB));
-    tcMenuMain->addControl(new touchcontrols::Button("space", touchcontrols::RectF(11, 13, 14, 16), "toggle", SDL_SCANCODE_SPACE));
+    // Along the top, not across the bottom. Descent 3 puts its dialog buttons on
+    // the bottom row - "Join Selected", "Exit", "OK" - and a control sitting there
+    // takes the touch instead of the button underneath it, which made those
+    // unreachable. Nothing in the game's own screens reaches this high.
+    tcMenuMain->addControl(new touchcontrols::Button("tab", touchcontrols::RectF(5, 0, 8, 2), "key_tab", SDL_SCANCODE_TAB));
+    tcMenuMain->addControl(new touchcontrols::Button("space", touchcontrols::RectF(8, 0, 11, 2), "toggle", SDL_SCANCODE_SPACE));
 
     tcMenuMain->addControl(new touchcontrols::Button("keyboard", touchcontrols::RectF(2, 0, 4, 2), "keyboard", KEY_SHOW_KBRD));
     tcMenuMain->addControl(new touchcontrols::Button("gamepad", touchcontrols::RectF(22, 0, 24, 2), "gamepad", KEY_SHOW_GAMEPAD));
