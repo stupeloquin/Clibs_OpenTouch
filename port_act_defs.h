@@ -244,6 +244,7 @@
 #define PORT_ACT_MENU_ABORT               0x207 //519
 #define PORT_ACT_MENU_SHOW                0x208 //520 (back button)
 #define PORT_ACT_MENU_TAB                 0x209 //521 (move focus)
+#define PORT_ACT_GUIDEBOT                 0x20A //522 (GuideBot menu)
 
 #define PORT_ACT_MOUSE_LEFT               0x240 // Left mouse button
 #define PORT_ACT_MOUSE_RIGHT              0x241 // Right mouse button

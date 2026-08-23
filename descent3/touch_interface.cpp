@@ -171,8 +171,14 @@ void TouchInterface::createControls(std::string filesPath)
                                                      "Rear view"));
     tcGameMain->addControl(new touchcontrols::Button("cockpit_view", touchcontrols::RectF(8, 0, 10, 2), "goggles", PORT_ACT_COCKPIT_VIEW, false, true,
                                                      "Cockpit view"));
-    tcGameMain->addControl(new touchcontrols::Button("keyboard", touchcontrols::RectF(10, 0, 12, 2), "keyboard", KEY_SHOW_KBRD, false, true,
+    // Visible by default: the on-screen keyboard is the only way to type while
+    // flying - chat, the console, cheats - and hiding it left no way in at all.
+    tcGameMain->addControl(new touchcontrols::Button("keyboard", touchcontrols::RectF(10, 0, 12, 2), "keyboard", KEY_SHOW_KBRD, false, false,
                                                      "Show keyboard"));
+    // The GuideBot's command menu, which the game opens with F4. Its commands are
+    // then picked with the number keys, which the menu control set provides.
+    tcGameMain->addControl(new touchcontrols::Button("guidebot", touchcontrols::RectF(2, 0, 4, 2), "chat", PORT_ACT_GUIDEBOT, false, false,
+                                                     "GuideBot menu"));
     tcGameMain->addControl(new touchcontrols::Button("show_weapons", touchcontrols::RectF(12, 14, 14, 16), "show_weapons", KEY_SHOW_WEAPONS, false, false,
                                                      "Show weapon numbers"));
     tcGameMain->addControl(new touchcontrols::Button("show_custom", touchcontrols::RectF(0, 2, 2, 4), "custom_show", KEY_SHOW_CUSTOM, false, true,

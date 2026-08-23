@@ -351,6 +351,7 @@ void PortableAction(int state, int action)
 
         // --- view ---
         case PORT_ACT_MAP:          inject_key(state, SDL_SCANCODE_TAB); break;
+        case PORT_ACT_GUIDEBOT:     inject_key(state, SDL_SCANCODE_F4); break;
         case PORT_ACT_REAR_VIEW:    inject_key(state, SDL_SCANCODE_R); break;
 
         // --- menus, straight to the keyboard ---
