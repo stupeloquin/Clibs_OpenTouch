@@ -1185,18 +1185,25 @@ void TouchInterfaceBase::keyboardKeyPressed(uint32_t key)
     {
         key = key + 32;
     }
+
+    // Whether the keyboard's own Shift is latched. Shifting used to mean nothing
+    // but sending the upper-case letter, so a chord with anything else - Shift+F1
+    // for Descent 3's monitor views, Shift+1 for its guidebot orders - arrived as
+    // the bare key and did nothing at all. There is no way to hold two on-screen
+    // keys at once, so the latch has to become the modifier.
+    bool shiftLatched = (uiKeyboard != NULL) && uiKeyboard->isShiftActive();
 #ifdef USE_SDL3
     #define SDL_DEFAULT_KEYBOARD_ID    1
 
     SDL_Scancode sc = SDL_GetScancodeFromKey(key, NULL);
-    bool needShift = false;
+    bool needShift = shiftLatched;
     if(sc == SDL_SCANCODE_UNKNOWN)
     {
         char base = shiftedSymbolToBaseKey((char) key);
         if(base)
         {
             sc = SDL_GetScancodeFromKey(base, NULL);
-            needShift = (sc != SDL_SCANCODE_UNKNOWN);
+            needShift = needShift || (sc != SDL_SCANCODE_UNKNOWN);
         }
     }
     if(sc != SDL_SCANCODE_UNKNOWN)
@@ -1220,14 +1227,14 @@ void TouchInterfaceBase::keyboardKeyPressed(uint32_t key)
     }
 #else
     SDL_Scancode sc = SDL_GetScancodeFromKey(key);
-    bool needShift = false;
+    bool needShift = shiftLatched;
     if(sc == SDL_SCANCODE_UNKNOWN)
     {
         char base = shiftedSymbolToBaseKey((char) key);
         if(base)
         {
             sc = SDL_GetScancodeFromKey(base);
-            needShift = (sc != SDL_SCANCODE_UNKNOWN);
+            needShift = needShift || (sc != SDL_SCANCODE_UNKNOWN);
         }
     }
     if(sc != SDL_SCANCODE_UNKNOWN)
