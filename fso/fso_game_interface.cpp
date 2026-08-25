@@ -111,6 +111,8 @@ void PortableInit(int argc, const char **argv)
 
 // ------------------------------------------------------------------- input
 
+static SDL_Window *game_window(void);
+
 static void inject_key(int state, SDL_Scancode scancode)
 {
     SDL_Event event;
@@ -121,6 +123,16 @@ static void inject_key(int state, SDL_Scancode scancode)
     event.key.repeat = false;
     event.key.scancode = scancode;
     event.key.key = SDL_GetKeyFromScancode(scancode, SDL_KMOD_NONE, false);
+
+    /*
+     * The window id matters. FreeSpace drops any key, motion or button event
+     * that is not stamped with its own window - isWindowEvent() in
+     * osapi.cpp, checked at the top of every input handler - and an event
+     * built here starts with windowID 0. Without this the engine saw nothing
+     * the on-screen keyboard sent: the pilot screen raised the keyboard,
+     * took every keystroke, and never showed a character.
+     */
+    event.key.windowID = SDL_GetWindowID(game_window());
 
     SDL_PushEvent(&event);
 }
@@ -180,6 +192,52 @@ static void window_size(float *w, float *h)
 }
 
 /*
+ * Mouse events are pushed the same way key events are, rather than through
+ * SDL_InjectMouse, for the window id. SDL_InjectMouse stamps whatever SDL holds
+ * as the Android window, and FreeSpace drops any event whose window is not the
+ * one it is drawing into - isWindowEvent() in osapi.cpp, checked at the top of
+ * every input handler. Keys worked and clicks did not, which is exactly what a
+ * window-id mismatch looks like: the cursor followed the finger (the overlay
+ * draws that) while nothing on screen could be pressed.
+ *
+ * Coordinates are window pixels, which is what the engine's motion handler
+ * expects before it converts to render pixels.
+ */
+static void inject_mouse_motion(float x, float y, float dx, float dy)
+{
+    SDL_Event event;
+    memset(&event, 0, sizeof(event));
+
+    event.type = SDL_EVENT_MOUSE_MOTION;
+    event.motion.windowID = SDL_GetWindowID(game_window());
+    event.motion.which = SDL_TOUCH_MOUSEID;
+    event.motion.x = x;
+    event.motion.y = y;
+    event.motion.xrel = dx;
+    event.motion.yrel = dy;
+
+    SDL_PushEvent(&event);
+}
+
+static void inject_mouse_button(int state, int button, float x, float y)
+{
+    SDL_Event event;
+    memset(&event, 0, sizeof(event));
+
+    event.type = state ? SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EVENT_MOUSE_BUTTON_UP;
+    event.button.windowID = SDL_GetWindowID(game_window());
+    event.button.which = SDL_TOUCH_MOUSEID;
+    // BUTTON_PRIMARY/SECONDARY from the overlay, SDL_BUTTON_* here.
+    event.button.button = (button == BUTTON_SECONDARY) ? SDL_BUTTON_RIGHT : SDL_BUTTON_LEFT;
+    event.button.down = state ? true : false;
+    event.button.clicks = 1;
+    event.button.x = x;
+    event.button.y = y;
+
+    SDL_PushEvent(&event);
+}
+
+/*
  * Pitch and yaw go in as relative mouse motion. FreeSpace binds JOY_HEADING_AXIS
  * and JOY_PITCH_AXIS to MOUSE_X_AXIS and MOUSE_Y_AXIS by default, and those
  * bindings are live whether or not the "use mouse to fly" option is set - that
@@ -192,14 +250,20 @@ static void window_size(float *w, float *h)
  */
 static const float kLookScale = 90.0f;
 
+// Where the finger last was, in window pixels. The motion events carry an
+// absolute position as well as the delta, so the aim deltas have to name
+// somewhere - and the cursor should not jump when they do.
+static float lastTouchX = 0.0f;
+static float lastTouchY = 0.0f;
+
 void PortableLookPitch(int mode, float pitch)
 {
-    SDL_InjectMouse(0, ACTION_MOVE, 0, pitch * kLookScale, 1);
+    inject_mouse_motion(lastTouchX, lastTouchY, 0, pitch * kLookScale);
 }
 
 void PortableLookYaw(int mode, float yaw)
 {
-    SDL_InjectMouse(0, ACTION_MOVE, yaw * kLookScale, 0, 1);
+    inject_mouse_motion(lastTouchX, lastTouchY, yaw * kLookScale, 0);
 }
 
 // Dragging a finger over a menu moves the pointer.
@@ -208,11 +272,11 @@ void PortableMouse(float dx, float dy)
     float w, h;
     window_size(&w, &h);
 
-    SDL_InjectMouse(0, ACTION_MOVE, dx * w, dy * h, 1);
-}
+    lastTouchX += dx * w;
+    lastTouchY += dy * h;
 
-static float lastTouchX = 0.5f;
-static float lastTouchY = 0.5f;
+    inject_mouse_motion(lastTouchX, lastTouchY, dx * w, dy * h);
+}
 
 // FreeSpace's menus are pointed at, and its mouse position comes straight from
 // the SDL motion event (Mouse_x = x, in code/io/mouse.cpp), so placing the
@@ -222,10 +286,13 @@ void PortableMouseAbs(float x, float y)
     float w, h;
     window_size(&w, &h);
 
-    lastTouchX = x;
-    lastTouchY = y;
+    const float px = x * w;
+    const float py = y * h;
 
-    SDL_InjectMouse(0, ACTION_MOVE, x * w, y * h, 0);
+    inject_mouse_motion(px, py, px - lastTouchX, py - lastTouchY);
+
+    lastTouchX = px;
+    lastTouchY = py;
 }
 
 void PortableMouseButton(int state, int button, float dx, float dy)
@@ -233,12 +300,12 @@ void PortableMouseButton(int state, int button, float dx, float dy)
     float w, h;
     window_size(&w, &h);
 
-    // SDL wants the mask of buttons held *after* the change and works out which
-    // one moved by itself; passing the released button on the way up would
-    // leave it with nothing changed. The coordinates go along with it so the
-    // click lands where the finger is rather than wherever the cursor drifted.
-    SDL_InjectMouse(state ? button : 0, state ? ACTION_DOWN : ACTION_UP,
-                    lastTouchX * w, lastTouchY * h, 0);
+    (void) w;
+    (void) h;
+
+    // The click lands where the finger is rather than wherever the cursor
+    // drifted to, so a tap presses what was under it.
+    inject_mouse_button(state, button, lastTouchX, lastTouchY);
 }
 
 /*

@@ -214,12 +214,21 @@ void TouchInterface::createControls(std::string filesPath)
     tcBlank->signal_button.connect(sigc::mem_fun(this, &TouchInterface::blankButton));
 
     // Keyboard -----------------------------------------------------------
-    // The upper half, not the lower one the other ports use. FreeSpace raises
-    // this itself whenever a screen wants typing - the pilot screen does, on
-    // the way in - and it lays its own buttons along the bottom of the picture,
-    // so a keyboard down there covers the CREATE and SELECT row the player has
-    // to reach to get past it. The top of these screens is empty.
-    uiKeyboard = new touchcontrols::UI_Keyboard("keyboard", touchcontrols::RectF(0, 0, 26, 8), "font_dual", 0, 0, 0);
+    /*
+     * This rect is the keyboard's *hit* area, and it has to match where the
+     * keyboard actually draws - which UI_Keyboard decides for itself, from its
+     * own keyboardYPos (Y_START_POS, half way down) rather than from this rect.
+     * The two are not the same thing, and getting them apart is expensive:
+     * TouchControls consumes any touch inside a control's rect whether or not
+     * the control did anything with it, so a rect somewhere the keys are not
+     * becomes an invisible wall. FreeSpace raises this keyboard by itself on
+     * the pilot screen, so that wall sat over the game's own CREATE and SELECT
+     * row for as long as the screen was up, and nothing on it could be clicked.
+     *
+     * The lower half, then, the same as the other ports - and the keyboard can
+     * be dragged down off the buttons with the move key in its top left corner.
+     */
+    uiKeyboard = new touchcontrols::UI_Keyboard("keyboard", touchcontrols::RectF(0, 8, 26, 16), "font_dual", 0, 0, 0);
     uiKeyboard->signal.connect(sigc::mem_fun(this, &TouchInterface::keyboardKeyPressed));
     tcKeyboard->addControl(uiKeyboard);
     tcKeyboard->setPassThroughTouch(touchcontrols::TouchControls::PassThrough::NO_CONTROL);
