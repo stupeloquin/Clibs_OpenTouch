@@ -234,6 +234,36 @@
 #define PORT_ACT_AVP_ZOOM_OUT     238
 
 
+//FreeSpace Open. The engine has 141 bindable actions; these are the ones a
+//touch layout can reasonably carry, and the rest stay on the keyboard.
+#define PORT_ACT_FS_THROTTLE_UP      250
+#define PORT_ACT_FS_THROTTLE_DOWN    251
+#define PORT_ACT_FS_THROTTLE_ZERO    252
+#define PORT_ACT_FS_THROTTLE_THIRD   253
+#define PORT_ACT_FS_THROTTLE_TWO_THIRD 254
+#define PORT_ACT_FS_THROTTLE_MAX     255
+#define PORT_ACT_FS_MATCH_SPEED      256
+#define PORT_ACT_FS_TARGET_NEXT      257
+#define PORT_ACT_FS_TARGET_PREV      258
+#define PORT_ACT_FS_TARGET_HOSTILE   259
+#define PORT_ACT_FS_TARGET_ATTACKER  260
+#define PORT_ACT_FS_TARGET_IN_RETICLE 261
+#define PORT_ACT_FS_TARGET_SUBSYSTEM 262
+#define PORT_ACT_FS_COUNTERMEASURE   263
+#define PORT_ACT_FS_CYCLE_PRIMARY    264
+#define PORT_ACT_FS_CYCLE_SECONDARY  265
+#define PORT_ACT_FS_SHIELD_EQUALIZE  266
+#define PORT_ACT_FS_SHIELD_FORWARD   267
+#define PORT_ACT_FS_ENERGY_WEAPONS   268
+#define PORT_ACT_FS_ENERGY_SHIELDS   269
+#define PORT_ACT_FS_ENERGY_ENGINES   270
+#define PORT_ACT_FS_COMMS_MENU       271
+#define PORT_ACT_FS_GLIDE            272
+#define PORT_ACT_FS_TOGGLE_HUD       273
+#define PORT_ACT_FS_RADAR_RANGE      274
+#define PORT_ACT_FS_TIME_COMPRESS    275
+#define PORT_ACT_FS_TIME_EXPAND      276
+
 #define PORT_ACT_MENU_UP                  0x200 //512
 #define PORT_ACT_MENU_DOWN                0x201 //513
 #define PORT_ACT_MENU_LEFT                0x202 //514
