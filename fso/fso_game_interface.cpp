@@ -178,12 +178,28 @@ static SDL_Window *game_window(void)
     return cached;
 }
 
+/*
+ * The framebuffer the engine renders into, set from the launcher's resolution
+ * choice - see setFramebufferSize in android_jni_inc.cpp.
+ *
+ * This, and not the SDL window, is the space a click has to be expressed in.
+ * The two are not the same size here: the window came back 2112 wide while
+ * FreeSpace was rendering and hit-testing at 2410, so every click landed short
+ * of the finger, and further short the nearer the right edge. On the pilot
+ * screen a press on CREATE arrived in the gap beside it - the engine accepted
+ * the click, at coordinates that were not over any button.
+ */
+extern int game_screen_width;
+extern int game_screen_height;
+
 static void window_size(float *w, float *h)
 {
-    int iw = 0, ih = 0;
+    int iw = game_screen_width;
+    int ih = game_screen_height;
 
-    if (SDL_Window *win = game_window())
-        SDL_GetWindowSize(win, &iw, &ih);
+    // Before the framebuffer is configured, the window is the best guess going.
+    if ((iw <= 0 || ih <= 0) && game_window())
+        SDL_GetWindowSizeInPixels(game_window(), &iw, &ih);
 
     // Something plausible rather than zero, so a touch before the window exists
     // is merely wrong rather than a divide by nothing.
